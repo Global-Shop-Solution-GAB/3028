@@ -1,0 +1,192 @@
+Program.Sub.ScreenSU.Start
+
+Gui.F_Customer..Create
+Gui.F_Customer..Caption("Flag Residential")
+Gui.F_Customer..Size(3105,1230)
+Gui.F_Customer..Position(0,0)
+Gui.F_Customer..AlwaysOnTop(False)
+Gui.F_Customer..FontName("arial")
+Gui.F_Customer..FontSize(8)
+Gui.F_Customer..ForeColor(0)
+Gui.F_Customer..Backcolor(-2147483633)
+Gui.F_Customer..ControlBox(False)
+Gui.F_Customer..MaxButton(False)
+Gui.F_Customer..MinButton(False)
+Gui.F_Customer..MousePointer(0)
+Gui.F_Customer..Moveable(False)
+Gui.F_Customer..Sizeable(True)
+Gui.F_Customer..ShowInTaskBar(False)
+Gui.F_Customer..TitleBar(True)
+
+Gui.F_Customer..Event(unload,unload)
+
+Gui.F_Customer.chkResidential.Create(checkbox)
+Gui.F_Customer.chkResidential.Alignment(0)
+Gui.F_Customer.chkResidential.Caption("Residential")
+Gui.F_Customer.chkResidential.Visible(True)
+Gui.F_Customer.chkResidential.Size(1245,495)
+Gui.F_Customer.chkResidential.Zorder(0)
+Gui.F_Customer.chkResidential.Position(200,100)
+Gui.F_Customer.chkResidential.Enabled(True)
+Gui.F_Customer.chkResidential.FontName("arial")
+Gui.F_Customer.chkResidential.FontSize(8)
+Gui.F_Customer.chkResidential.TabStop(True)
+Gui.F_Customer.chkResidential.TabIndex(0)
+Gui.F_Customer.chkResidential.Tooltip("")
+Gui.F_Customer.chkResidential.ControlGroup(0)
+Gui.F_Customer.chkResidential.DefaultValue("")
+
+
+Gui.F_Customer.cmdOk.Create(button)
+Gui.F_Customer.cmdOk.Caption("Ok")
+Gui.F_Customer.cmdOk.Visible(True)
+Gui.F_Customer.cmdOk.Size(975,375)
+Gui.F_Customer.cmdOk.Zorder(0)
+Gui.F_Customer.cmdOk.Position(1460,200)
+Gui.F_Customer.cmdOk.Enabled(True)
+Gui.F_Customer.cmdOk.FontName("arial")
+Gui.F_Customer.cmdOk.FontSize(8)
+Gui.F_Customer.cmdOk.TabStop(True)
+Gui.F_Customer.cmdOk.TabIndex(1)
+Gui.F_Customer.cmdOk.Tooltip("")
+Gui.F_Customer.cmdOk.ControlGroup(0)
+Gui.F_Customer.cmdOk.DefaultValue("")
+
+Gui.F_Customer.cmdOk.Event(click,save)
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.DSN.Declare(String)
+Variable.Global.customer.Declare(String)
+Variable.Global.shipto.Declare(String)
+
+Variable.Global.sOrderNo.Declare(String)
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+Variable.Local.query.Declare(String)
+Variable.local.address.declare(String)
+Variable.Local.address.Redim(0,4)
+Variable.local.city.declare(String)
+Variable.local.name.declare(String)
+Variable.local.customer.declare(String)
+Variable.local.shipid.declare(String)
+Variable.local.residential.declare(String)
+Variable.local.hold.declare(String)
+Variable.local.inter.declare(String)
+V.Local.sOrderNo.Declare(String)
+
+
+Function.Odbc.Connection!Conx.Openconnection(V.ambient.pDsn,Variable.Ambient.PUser,Variable.Ambient.Ppass)
+F.Intrinsic.Control.CallSub(Updatetable)
+'if called from order header do this
+Function.intrinsic.control.if(Variable.Caller.hook,=,"11910")
+	Variable.local.customer.set(Variable.Passed.000006)
+	Variable.local.shipid.set(Variable.Passed.000061)
+	V.Local.sOrderNo.Set(V.Passed.000003)
+	F.Intrinsic.String.LPad(V.Local.sOrderNo,"0",7,V.Local.sOrderNo)
+
+'if called from customer master do this
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14360")
+	Variable.local.customer.set(Variable.Passed.000002)
+	Variable.local.shipid.set("")
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14370")
+	Variable.local.customer.set(Variable.Passed.000002)
+	Variable.local.shipid.set("")
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14380")
+	Variable.local.customer.set(Variable.Passed.000002)
+	Variable.local.shipid.set("")
+'if called from customer multi ship to master do this
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14420")
+	Variable.local.customer.set(Variable.Passed.000001)
+	Variable.local.shipid.set(Variable.Passed.000003)
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14430")
+	Variable.local.customer.set(Variable.Passed.000001)
+	Variable.local.shipid.set(Variable.Passed.000003)
+Function.intrinsic.control.elseif(Variable.Caller.hook,=,"14440")
+	Variable.local.customer.set(Variable.Passed.000001)
+	Variable.local.shipid.set(Variable.Passed.000003)
+Function.intrinsic.control.endif
+
+V.Global.customer.Set(V.Local.customer)
+V.Global.shipto.Set(V.Local.shipid)
+V.Global.sOrderNo.Set(V.Local.sOrderNo)
+
+F.Intrinsic.Control.If(V.Local.sOrderNo,=,"")
+	Function.intrinsic.string.concat("SELECT * FROM ATG_3028_CUST_RES_ADD WHERE CUSTOMER = '",Variable.Local.customer,"' and SHIP_ID = '",Variable.Local.shipid,"'",Variable.Local.query)
+F.Intrinsic.Control.Else
+	Function.intrinsic.string.concat("SELECT * FROM ATG_3028_CUST_RES_ADD WHERE CUSTOMER = '",Variable.Local.customer,"' and SHIP_ID = '",Variable.Local.shipid,"' AND ORDER_NO = '",V.Local.sOrderNo,"'",Variable.Local.query)
+F.Intrinsic.Control.EndIf
+
+Function.Odbc.Connection!Conx.Openrecordsetro("rstX",Variable.Local.Query)
+Function.Intrinsic.Control.if(Variable.Odbc.Conx!RstX.Eof,=,False)
+	Function.intrinsic.string.rtrim(Variable.Odbc.conx!rstX.fieldval!RESIDENTIAL,Variable.Local.residential)
+Function.intrinsic.control.endif
+Function.Odbc.Conx!RstX.close
+
+Function.Intrinsic.Control.if(Variable.Local.residential,=,"Y")
+	Gui.F_Customer.chkResidential.value(1)
+Function.intrinsic.control.elseif(Variable.Local.residential,<>,"Y")
+	Gui.F_Customer.chkResidential.value(0)
+Function.intrinsic.control.endif
+Gui.F_Customer..Show
+
+Program.Sub.Main.end
+
+Program.Sub.save.Start
+
+Variable.Local.query.Declare(String)
+Variable.local.customer.declare(String)
+Variable.local.shipid.declare(String)
+Variable.local.residential.declare(String)
+
+
+Function.Intrinsic.Control.if(V.Screen.F_Customer!chkResidential.value,=,1)
+	Variable.local.residential.set("Y")
+Function.intrinsic.control.elseif(V.Screen.F_Customer!chkResidential.value,=,0)
+	Variable.local.residential.set("N")
+Function.intrinsic.control.endif
+F.Intrinsic.Control.If(V.Global.sOrderNo.Trim,=,"")
+	Function.intrinsic.string.concat("SELECT * FROM ATG_3028_CUST_RES_ADD WHERE CUSTOMER ='",V.global.customer,"' AND SHIP_ID = '",V.Global.shipto,"'",V.Local.query)
+F.Intrinsic.Control.Else
+	Function.intrinsic.string.concat("SELECT * FROM ATG_3028_CUST_RES_ADD WHERE CUSTOMER ='",V.global.customer,"' AND SHIP_ID = '",V.Global.shipto,"' AND ORDER_NO = '",V.Global.sOrderNo,"'",V.Local.query)
+F.Intrinsic.Control.EndIf
+Function.Odbc.Connection!Conx.OpenRecordsetRW("rst",Variable.Local.Query)
+F.Intrinsic.Control.If(V.Odbc.Conx!rst.EOF,=,True)
+	F.ODBC.Conx!rst.AddNew
+	F.ODBC.conx!rst.Set!CUSTOMER(V.global.customer.Trim)
+	F.ODBC.Conx!rst.Set!SHIP_ID(V.global.shipto.rtrim)
+	F.ODBC.Conx!rst.Set!ORDER_NO(V.Global.sOrderNo)
+F.Intrinsic.Control.EndIf
+	F.ODBC.Conx!rst.Set!RESIDENTIAL(V.Local.residential)
+F.odbc.Conx!rst.Update
+
+F.ODBC.Conx!rst.Close
+Function.Intrinsic.UI.MsgBox("Customer Info Saved","Customer Info Saved",0)
+F.Intrinsic.Control.CallSub(Unload)
+
+Program.Sub.save.End
+
+Program.Sub.unload.Start
+
+Function.Odbc.Connection!Conx.Close
+Function.Intrinsic.Control.End
+
+
+Program.Sub.unload.End
+
+Program.Sub.UpdateTable.Start
+F.Intrinsic.Control.ErrorResume(True)
+F.odbc.Connection!Conx.Execute("ALTER TABLE ATG_3028_CUST_RES_ADD( ADD COLUMN Order_No CHAR(7) CASE )")
+F.Intrinsic.Control.ErrorResume(False)
+
+
+Program.Sub.UpdateTable.End
+
+
+
+Program.Sub.Comments.Start
+${$0$}$$}$$}$12:00:00 AM$}$False
+Program.Sub.Comments.End
